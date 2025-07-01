@@ -30,7 +30,7 @@ public:
 
 private:
   size_t width_, height_, loop_;
-  double seedRate_ = 0.01;
+  double seedRate_ = 0.005;
   double seedValue_ = 0;
   int bugCount_ = 0;
   bool running_ = true;

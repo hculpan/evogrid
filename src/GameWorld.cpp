@@ -30,7 +30,7 @@ int GameWorld::randomHeight() {
 void GameWorld::initialize() {
   loop_ = 0;
 
-  for (int i = 0; i < 5000; i++) {
+  for (int i = 0; i < 10000; i++) {
     oldGrid_[idx(randomWidth(), randomHeight())].emplace(Food());
   }
 
@@ -109,6 +109,16 @@ void GameWorld::update() {
       case ActionType::MOVE_STRAIGHT_LEFT:
         ny--, nx--;
         break;
+      case ActionType::SPAWN: {
+        auto c = optCell.value();
+        ny--;
+        if (ny < 0) {
+          ny += 2;
+        }
+        spawn(x, y, c);
+        std::cout << "New birth" << std::endl;
+        break;
+      }
       case ActionType::DIE:
         optCell.reset();
         break;
@@ -135,13 +145,9 @@ void GameWorld::update() {
             if constexpr (std::is_same_v<T, Creature>) {
               bugCount_++;
               if (targetOpt && std::holds_alternative<Food>(*targetOpt)) {
-                std::cout << "Consuming food!" << std::endl;
-                std::cout << "  Starting health: " << c.getHealth()
-                          << std::endl;
                 auto nutrition = std::get<Food>(*targetOpt).getNutrition();
                 targetOpt.reset(); // eat
                 c.addHealth(nutrition);
-                std::cout << "  Ending health: " << c.getHealth() << std::endl;
               }
             }
           },
@@ -189,10 +195,10 @@ void GameWorld::draw() {
   }
 
   std::string txt1 = "Cycle: " + std::to_string(loop_);
-  DrawText(txt1.c_str(), 20, 20, 24, WHITE);
+  DrawText(txt1.c_str(), 20, 12, 24, WHITE);
 
   std::string txt2 = "Bugs: " + std::to_string(bugCount_);
-  DrawText(txt2.c_str(), width_ * 4 - 200, 20, 24, WHITE);
+  DrawText(txt2.c_str(), width_ * 4 - 120, 12, 24, WHITE);
 
   if (bugCount_ == 0) {
     int textWidth = MeasureText("All bugs are dead!", 48);
@@ -203,7 +209,8 @@ void GameWorld::draw() {
     seedRate_ = 0;
   }
 
-  DrawFPS(width_ * 4 - 110, height_ * 4 - 40);
+  DrawRectangle(width_ * 4 - 110, height_ * 4 + 20, 110, 35, BLACK);
+  DrawFPS(width_ * 4 - 100, height_ * 4 + 25);
   EndDrawing();
 }
 
