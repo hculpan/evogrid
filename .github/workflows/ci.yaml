@@ -19,33 +19,40 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install cmake raylib
+          brew install --formula cmake raylib
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '5b1214315250939257ef5d62ecdcbca18cf4fb1c'
-          vcpkgCommands: |
-            bootstrap
-            install raylib:x64-windows-static
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          cd vcpkg
+          git checkout 5b1214315250939257ef5d62ecdcbca18cf4fb1c
+          .\bootstrap-vcpkg.bat
+          .\vcpkg.exe install raylib:x64-windows-static
 
       - name: Setup CMake
         uses: lukka/get-cmake@latest
 
-      - name: Configure
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
         run: |
           mkdir -p build
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir build
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }} --parallel
@@ -53,9 +60,7 @@ jobs:
       - name: Package
         run: |
           cd build/${{ matrix.build_type }}
-          if [ "${{ runner.os }}" == "macOS" ]; then
-            strip evogrid
-          fi
+          if [ "${{ runner.os }}" == "macOS" ]; then strip evogrid; fi
           zip -r EvoGrid-${{ matrix.os }}.zip evogrid*
 
       - name: Upload artifact
