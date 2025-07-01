@@ -28,14 +28,16 @@ jobs:
 
       - name: Build Raylib (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
           git clone https://github.com/raysan5/raylib.git raylib_src
           cd raylib_src
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
+          mkdir -p build && cd build
+          cmake .. -G "Visual Studio 17 2022" -A x64 \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_BUILD_TYPE=Release
           cmake --build . --config Release --parallel
-          cmake --install . --prefix "%GITHUB_WORKSPACE%/raylib_install"
+          cmake --install . --prefix "$GITHUB_WORKSPACE/raylib_install"
 
       - name: Setup CMake
         uses: lukka/get-cmake@latest
@@ -44,19 +46,20 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p build
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
+        shell: bash
         run: |
-          mkdir build
+          mkdir -p build
           cmake -S . -B build \
             -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/raylib_install"
+            -DCMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/raylib_install"
 
       - name: Build
+        shell: bash
         run: cmake --build build --config ${{ matrix.build_type }} --parallel --verbose
 
       - name: Strip macOS binary
