@@ -26,14 +26,17 @@ jobs:
           brew update
           brew install --formula cmake raylib
 
-      - name: Install deps (Windows)
+      - name: Build Raylib (Windows)
         if: runner.os == 'Windows'
         run: |
-          git clone https://github.com/microsoft/vcpkg.git vcpkg
-          cd vcpkg
-          git checkout 5b1214315250939257ef5d62ecdcbca18cf4fb1c
-          .\bootstrap-vcpkg.bat
-          .\vcpkg.exe install raylib:x64-windows-static
+          git clone https://github.com/raysan5/raylib.git raylib_src
+          cd raylib_src
+          mkdir build && cd build
+          cmake .. -G "Visual Studio 17 2022" -A x64 \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release --parallel
+          cmake --install . --prefix "%GITHUB_WORKSPACE%/raylib_install"
 
       - name: Setup CMake
         uses: lukka/get-cmake@latest
@@ -42,15 +45,17 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p build
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         run: |
           mkdir build
           cmake -S . -B build \
+            -G "Visual Studio 17 2022" -A x64 \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/raylib_install"
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }} --parallel --verbose
@@ -69,3 +74,4 @@ jobs:
           path: |
             build/${{ matrix.build_type }}/evogrid*
             build/evogrid*
+            build/${{ matrix.build_type }}/evogrid*.exe
