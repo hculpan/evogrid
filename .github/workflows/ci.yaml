@@ -2,21 +2,23 @@ name: CI
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
-        build_type: [Release]
+        os: [ macos-latest, windows-latest ]
+        build_type: [ Release ]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install deps (macOS)
         if: runner.os == 'macOS'
@@ -33,7 +35,8 @@ jobs:
           .\bootstrap-vcpkg.bat
           .\vcpkg.exe install raylib:x64-windows-static
 
-      - uses: lukka/get-cmake@latest
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
 
       - name: Configure
         run: |
@@ -47,10 +50,14 @@ jobs:
 
       - name: Strip macOS binary
         if: runner.os == 'macOS'
-        run: strip build/Release/evogrid
+        run: |
+          [ -f build/Release/evogrid ] && strip build/Release/evogrid
+          [ -f build/evogrid ]         && strip build/evogrid
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
-          path: build/Release/evogrid*
+          path: |
+            build/Release/evogrid*
+            build/evogrid*
