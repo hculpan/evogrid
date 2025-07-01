@@ -13,25 +13,10 @@ int main() {
   auto gw = GameWorld(screenWidth / 4, screenHeight / 4);
   gw.initialize();
 
-  int loop = 0;
   while (!WindowShouldClose()) {
-    loop++;
+    gw.update();
 
-    // draw
-    BeginDrawing();
-    ClearBackground(BLACK);
-    for (int x = 0; x < gw.getWidth(); x++) {
-      for (int y = 0; y < gw.getHeight(); y++) {
-        if (gw.hasValue(x, y)) {
-          DrawRectangle(x * 4, y * 4, 4, 4, WHITE);
-        }
-      }
-    }
-    DrawFPS(screenWidth - 110, screenHeight - 40);
-    EndDrawing();
-
-    // update
-    gw.update(loop);
+    gw.draw();
   }
 
   CloseWindow();

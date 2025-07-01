@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 
-#include "Cell.h"
+#include "CellVariant.h"
 
 class GameWorld {
 public:
@@ -12,13 +12,15 @@ public:
 
   void initialize();
 
-  void spawn(int x, int y, const Cell &c);
+  void spawn(int x, int y, const CellVariant &c);
 
   void kill(int x, int y);
 
   void move(int x1, int y1, int x2, int y2);
 
-  void update(int dt);
+  void update();
+
+  void draw();
 
   bool hasValue(int x, int y);
 
@@ -27,10 +29,16 @@ public:
   int getHeight();
 
 private:
-  size_t width_, height_;
-  std::vector<std::optional<Cell>> currGrid_;
-  std::vector<std::optional<Cell>> oldGrid_;
+  size_t width_, height_, loop_;
+  double seedRate_ = 0.01;
+  double seedValue_ = 0;
+  int bugCount_ = 0;
+  bool running_ = true;
+  std::vector<std::optional<CellVariant>> currGrid_;
+  std::vector<std::optional<CellVariant>> oldGrid_;
 
-  // helper: convert (x,y) → flat index
+  int randomWidth();
+  int randomHeight();
+
   size_t idx(int x, int y) const { return y * width_ + x; }
 };
