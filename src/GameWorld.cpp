@@ -1,10 +1,11 @@
 #include "raylib.h"
 
 #include "GameWorld.h"
-#include <random>
-#include <variant>
 
 #include <iostream>
+#include <random>
+#include <string>
+#include <variant>
 
 GameWorld::GameWorld(size_t w, size_t h)
     : width_(w), height_(h), currGrid_(w * h), oldGrid_(w * h) {
