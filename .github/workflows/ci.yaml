@@ -30,22 +30,21 @@ jobs:
 
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
-      uses: lukka/run-vcpkg@v16
+      uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: latest
         vcpkgCommands: |
           bootstrap
           install raylib:x64-windows-static
 
     - name: Setup CMake
-      uses: lukka/get-cmake@v4
+      uses: lukka/get-cmake@latest
 
     - name: Configure & generate
       run: |
         mkdir -p build
         cmake -B build -S . \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=$RUNNER_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+          ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
 
     - name: Build
       run: cmake --build build --config ${{ matrix.build_type }} --parallel
@@ -53,13 +52,13 @@ jobs:
     - name: Package
       run: |
         cd build/${{ matrix.build_type }}
-        if [ "${{ runner.os }}" = "macOS" ]; then
+        if [ "${{ runner.os }}" == "macOS" ]; then
           strip evogrid
         fi
         zip -r EvoGrid-${{ matrix.os }}.zip evogrid*
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
         path: build/${{ matrix.build_type }}/EvoGrid-${{ matrix.os }}.zip
