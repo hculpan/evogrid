@@ -2,33 +2,29 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
         build_type: [Release]
-    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install dependencies (macOS)
+      - name: Install deps (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install --formula cmake raylib
 
-      - name: Install dependencies (Windows)
+      - name: Install deps (Windows)
         if: runner.os == 'Windows'
         run: |
           git clone https://github.com/microsoft/vcpkg.git vcpkg
@@ -37,34 +33,24 @@ jobs:
           .\bootstrap-vcpkg.bat
           .\vcpkg.exe install raylib:x64-windows-static
 
-      - name: Setup CMake
-        uses: lukka/get-cmake@latest
+      - uses: lukka/get-cmake@latest
 
-      - name: Configure (macOS)
-        if: runner.os == 'macOS'
+      - name: Configure
         run: |
           mkdir -p build
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          mkdir build
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+            ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build_type }} --parallel
 
-      - name: Package
-        run: |
-          cd build/${{ matrix.build_type }}
-          if [ "${{ runner.os }}" == "macOS" ]; then strip evogrid; fi
-          zip -r EvoGrid-${{ matrix.os }}.zip evogrid*
+      - name: Strip macOS binary
+        if: runner.os == 'macOS'
+        run: strip build/Release/evogrid
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
-          path: build/${{ matrix.build_type }}/EvoGrid-${{ matrix.os }}.zip
+          path: build/Release/evogrid*
