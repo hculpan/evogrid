@@ -19,49 +19,47 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew update
-        brew install cmake raylib
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install cmake raylib
 
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
-     - name: Install dependencies (Windows)
-       if: runner.os == 'Windows'
-       uses: lukka/run-vcpkg@v11
-       with:
-         vcpkgGitCommitId: '5b1214315250939257ef5d62ecdcbca18cf4fb1c'
-         vcpkgCommands: |
-           bootstrap
-           install raylib:x64-windows-static
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '5b1214315250939257ef5d62ecdcbca18cf4fb1c'
+          vcpkgCommands: |
+            bootstrap
+            install raylib:x64-windows-static
 
-    - name: Setup CMake
-      uses: lukka/get-cmake@latest
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
 
-    - name: Configure & generate
-      run: |
-        mkdir -p build
-        cmake -B build -S . \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+      - name: Configure
+        run: |
+          mkdir -p build
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
 
-    - name: Build
-      run: cmake --build build --config ${{ matrix.build_type }} --parallel
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel
 
-    - name: Package
-      run: |
-        cd build/${{ matrix.build_type }}
-        if [ "${{ runner.os }}" == "macOS" ]; then
-          strip evogrid
-        fi
-        zip -r EvoGrid-${{ matrix.os }}.zip evogrid*
+      - name: Package
+        run: |
+          cd build/${{ matrix.build_type }}
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            strip evogrid
+          fi
+          zip -r EvoGrid-${{ matrix.os }}.zip evogrid*
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
-        path: build/${{ matrix.build_type }}/EvoGrid-${{ matrix.os }}.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
+          path: build/${{ matrix.build_type }}/EvoGrid-${{ matrix.os }}.zip
