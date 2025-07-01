@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
+    tags:    [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os:         [ macos-latest, windows-latest ]
         build_type: [ Release ]
 
     steps:
@@ -38,26 +38,34 @@ jobs:
       - name: Setup CMake
         uses: lukka/get-cmake@latest
 
-      - name: Configure
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
         run: |
           mkdir -p build
-          cmake -B build -S . \
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mkdir build
+          cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }} --parallel
+        run: cmake --build build --config ${{ matrix.build_type }} --parallel --verbose
 
       - name: Strip macOS binary
         if: runner.os == 'macOS'
         run: |
-          [ -f build/Release/evogrid ] && strip build/Release/evogrid
-          [ -f build/evogrid ]         && strip build/evogrid
+          for p in build/Release/evogrid build/evogrid; do
+            [ -f "$p" ] && strip "$p"
+          done
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: EvoGrid-${{ matrix.os }}-v${{ github.ref_name }}
           path: |
-            build/Release/evogrid*
+            build/${{ matrix.build_type }}/evogrid*
             build/evogrid*
