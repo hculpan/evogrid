@@ -30,11 +30,14 @@ jobs:
 
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgCommands: |
-          bootstrap
-          install raylib:x64-windows-static
+     - name: Install dependencies (Windows)
+       if: runner.os == 'Windows'
+       uses: lukka/run-vcpkg@v11
+       with:
+         vcpkgGitCommitId: '5b1214315250939257ef5d62ecdcbca18cf4fb1c'
+         vcpkgCommands: |
+           bootstrap
+           install raylib:x64-windows-static
 
     - name: Setup CMake
       uses: lukka/get-cmake@latest
