@@ -28,6 +28,9 @@ if(APPLE)
     "-framework CoreVideo"
   )
 endif()
+if(WIN32)
+  target_link_libraries(evogrid PRIVATE winmm)
+endif()
 
 add_custom_target(run
   COMMAND $<TARGET_FILE:evogrid>
